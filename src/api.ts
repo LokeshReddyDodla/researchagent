@@ -418,3 +418,37 @@ function authHeaders(token: string, extra?: Record<string, string>): Record<stri
   if (deviceId) headers["x-device-id"] = deviceId;
   return headers;
 }
+
+// ── Cohort Agent ───────────────────────────────────────────────────────────
+
+export interface CohortAnswer {
+  answer: string;
+  /** Opaque agent conversation state to pass back on the next turn. */
+  history: unknown[];
+}
+
+/**
+ * Ask the cohort agent a free-form question across the care provider's panel.
+ *
+ * POST /v1/cohort-agent/query — non-streaming. The backend runs the agent
+ * (scoped to this care provider) and returns the answer plus updated history.
+ * Pass the previous turn's `history` for multi-turn context.
+ */
+export async function cohortQuery(
+  token: string,
+  message: string,
+  history: unknown[] = [],
+): Promise<CohortAnswer> {
+  const resp = await fetch(`${API_BASE_URL}/v1/cohort-agent/query`, {
+    method: "POST",
+    headers: authHeaders(token, { "Content-Type": "application/json" }),
+    body: JSON.stringify({ message, history }),
+  });
+  if (!resp.ok) {
+    const body = await safeJson(resp);
+    throw asApiError(resp, body, "Cohort query failed");
+  }
+  const body = await resp.json();
+  const data = body?.data ?? body;
+  return { answer: data?.answer ?? "", history: data?.history ?? [] };
+}

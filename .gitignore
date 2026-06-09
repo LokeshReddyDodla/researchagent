@@ -3,3 +3,8 @@ dist
 .env.local
 .DS_Store
 *.log
+
+# tsc -b artifacts (vite.config is authored in TS; never commit the compiled JS)
+vite.config.js
+vite.config.d.ts
+*.tsbuildinfo
